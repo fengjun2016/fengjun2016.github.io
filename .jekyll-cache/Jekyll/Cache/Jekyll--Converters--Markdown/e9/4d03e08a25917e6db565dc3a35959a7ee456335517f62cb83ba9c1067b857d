@@ -1,0 +1,108 @@
+I"�,<h2 id="前言">前言</h2>
+
+<blockquote>
+  <p>公司最近需要新上一个业务，在秒杀的同时，还需要实时统计已经秒杀的订单量?所以这里做一下技术分析和技术总结</p>
+</blockquote>
+
+<h2 id="现有技术背景以及知识扫盲">现有技术背景以及知识扫盲</h2>
+
+<h3 id="qps">QPS</h3>
+
+<p>即<strong><code class="language-plaintext highlighter-rouge">Queries Per Second</code></strong>的缩写，每秒能处理查询数目。 是一台服务器每秒能够相应的查询次数，是对一个特定的查询服务器在规定时间内所处理流量多少的衡量标准。`</p>
+
+<h3 id="12306抢票分析">12306抢票分析</h3>
+
+<blockquote>
+  <p>每到节假日期间，一二线城市返乡、外出游玩的人们几乎都会面临着一个问题: 抢购火车票！虽然现在大多数情况下都能订到火车票，但是放票瞬间即无票的场景，相信大家都深有体会。尤其是春节期间，大家不仅使用<code class="language-plaintext highlighter-rouge">12306</code>，还会考虑”智行”和其他的抢票软件，全国上下几亿人都在这段时间抢票。”12306”承受着这个世界上任何秒杀系统都无法超越的<strong>QPS</strong>, 上百万的并发再正常不过了！</p>
+</blockquote>
+
+<blockquote>
+  <p>笔者专门研究了一下”12306”的服务端架构，学习到了其系统设计上的很多亮点，在这里和大家分享一下并模拟一个例子: 如何在100万人同时抢一万张火车票时，系统提供正常、稳定的服务。</p>
+</blockquote>
+
+<h4 id="1大型高并发系统架构">1.大型高并发系统架构</h4>
+
+<p>高并发的系统架构都会采用分布式集群部署，服务上层有着层层负载均衡，并提供各种容灾手段(双火机房、节点容错、服务器灾备)保证系统的高可用，流量也会根据不同的负载能力和配置策略均衡到不同的服务器上。下面是一个简单的示意图:</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggcu80t26pj30ny0mxwj3.jpg" alt="" /></p>
+
+<h5 id="11负载均衡简介">1.1负载均衡简介</h5>
+
+<p>上图中描述了用户请求到服务器经历了三层的负载均衡，下边分别简单介绍一下这三种负载均衡:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">OSPF</code>(开放式最短链路优先)是一个内部网关协议(Interior Gateway Protocol,简称<code class="language-plaintext highlighter-rouge">IGP</code>)。OSPF通过路由器之间通告网络接口的状态来建立链路状态数据库，生成最短路径树,<code class="language-plaintext highlighter-rouge">OSPF</code>会自动计算路由接口上的Cost值,但也可以通过手工指定该接口的Cost值,手工指定的优先于自动计算的值。<code class="language-plaintext highlighter-rouge">OSPF</code>计算的Cost值,同样是和接口带宽成反比，带宽越高，Cost值就会越小。到达目标相同Cost值的路径，可以执行负载均衡，最多6条链路同时执行负载均衡。</li>
+  <li><code class="language-plaintext highlighter-rouge">LVS</code>(Linux VirutalServer),它是一种集群(Cluster)技术,采用IP负载均衡技术和基于内容请求分发技术。调度具有很好的吞吐率,将请求均衡的转移到不同的服务器上执行，且调度器自动屏蔽掉服务器的故障，从而将一组服务器构成一个高性能的、高可用的虚拟服务器。</li>
+  <li>Nginx想必大家都很熟悉了，是一款非常高性能的http代理/反向代理服务器，服务开发中也经常使用它来做负载均衡。Nginx实现负载均衡的方式主要有三种:轮询、加权轮询、ip hash 轮询，下面我们就针对Nginx的加权轮询做专门的配置和测试。</li>
+</ul>
+
+<h5 id="12nginx加权轮询的演示">1.2Nginx加权轮询的演示</h5>
+
+<blockquote>
+  <p>环境测试 Mac OS</p>
+</blockquote>
+
+<p>Nginx实现负载均衡通过upstream模块实现，其中加权轮询的配置是可以给相关的服务加上一个权重值，配置的时候可能根据服务器的性能、负载能力设置相应的负载。下面是一个加权轮询负载的配置，我将在被地的监听3001-3004端口吗，分别配置1,2,3,4的权重.</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggcuve91ldj30y40pc439.jpg" alt="" /></p>
+
+<p>我在本地/etc/hosts目录下面配置了 www.load_balance.com的虚拟域名地址，接下来将会使用Go语言开启四个http端口监听服务，下面是监听了3001端口的Go程序，其他几个只需要修改端口即可：</p>
+
+<ul>
+  <li>1.<code class="language-plaintext highlighter-rouge">修改本地hosts</code></li>
+</ul>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggdrknyrxuj30kt0d6tap.jpg" alt="" /></p>
+
+<ul>
+  <li>2.<code class="language-plaintext highlighter-rouge">使用go语言开启服务监听端口</code></li>
+</ul>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggcwbvx2mrj30xj0u0grq.jpg" alt="" /></p>
+
+<p>我们将请求的端口日志信息写到了./stat.log文件中，然后使用ab压测工具做压缩:</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggdrd0iakmj30ha05oq3f.jpg" alt="" /></p>
+
+<p>统计日志中的结果，3001-3004端口分别得到了100、200、300、400的请求量，这和我在nginx中配置的权重占比很好的吻合在了一起，并且负载后的流量非常的均匀、随机。具体的实现大家可以参考nginx的upsteam模块实现源码，这里推荐一篇文章：<a href="https://www.kancloud.cn/digest/understandingnginx/202607">Nginx 中 upstream 机制的负载均衡</a></p>
+
+<h4 id="2秒杀抢购系统选型分析">2.秒杀抢购系统选型分析</h4>
+<p>回到我们最初提到的问题中来:火车票秒杀系统如何在高并发情况下提供正常、稳定的服务呢?</p>
+
+<p>从上面的介绍我们知道用户秒杀流量通过层层的负载均衡，均匀到了不同的服务器上，即使如此，集群中的单机所承受的QPS也是非常高的。</p>
+
+<p>如何将单机性能优化到极致呢?要解决这个问题，我们就要想明白一件事：通常订票系统要处理生成订单、扣减库存、用户支付这三个基本的阶段，我们系统要做的事情是要保证火车票订单<code class="language-plaintext highlighter-rouge">不超卖</code>, <code class="language-plaintext highlighter-rouge">不少卖</code>, 每张售卖的车票都必须支付才有效，还要保证系统承受极高的并发。这三个阶段的先后顺序该怎么分配才会更加合理呢?接下来我们来分析一下:</p>
+
+<h5 id="21-下单减库存">2.1 下单减库存</h5>
+<p>当用户并发请求到达服务端时，首先创建订单，然后扣减库存，等待用户支付。这种顺序使我们一般人首先会想到的解决方案，这种情况下也能保证订单不会超卖，因为创建订单之后就会减掉库存，这是一个原子操作。
+但是这样也会产生一些问题，<code class="language-plaintext highlighter-rouge">第一</code>:就是在极限并发情况下,任何一个内存操作的细节都至关影响性能，尤其像创建订单这种逻辑，一般都需要存储到磁盘数据库中的，对数据库的压力是可想而知的；<code class="language-plaintext highlighter-rouge">第二</code>:是如果用户在恶意下单的情况下，只下单不支付的话，这样的库存就会变少，会少卖很多订单，虽然服务端可以限制IP和用户的购买订单数量，这也不算是一个好方法。</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggdu4h1ycqj30qj05vgn1.jpg" alt="" /></p>
+
+<h5 id="22-支付减库存">2.2 支付减库存</h5>
+<p>如果等待用户支付了订单再减掉库存的话，第一感觉是不会少卖。但是这是<code class="language-plaintext highlighter-rouge">并发架构的大忌，因为在极限 并发的情况下，用户可能会创建很多订单，当库存为0的时候很多用户会发现抢到的订单支付不了</code>，这就是所谓的”超卖”.也不能避免并发操作数据库磁盘IO</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggdud531huj30qj05vabh.jpg" alt="" /></p>
+
+<h5 id="23-预扣库存">2.3 预扣库存</h5>
+<p>从发上边两种方案的考虑，我们可以得出以下结论：<code class="language-plaintext highlighter-rouge">只要创建订单，就要频繁操作数据库IO</code>‘。那么有没有一种不需要直接操作数据IO的方案呢? 这就是<code class="language-plaintext highlighter-rouge">预扣库存</code>。先扣除了库存，保证能够不超卖，然后异步生成用户订单，这样相应给用户的速度就会快了很多；那么如何能够保证不少卖呢? 用户拿到了订单，不支付怎么办? 我们都知道订单都有有效期，比如说用户5分钟内不支付，订单就失效了，订单一旦失效，就会加入新的库存，这也是现在很多网上零售企业保证商品不少卖采用的方案。订单的生成是异步的，一般都会放到MQ、Kafka这样的即时消费队列中处理，订单量比较少的情况下，生成订单非常快，用户几乎不用排队。</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggdv27vakmj30ob0hejxo.jpg" alt="" /></p>
+
+<h4 id="3扣库存的艺术">3.扣库存的艺术</h4>
+<p>从上面的分析可知，显然预扣库存的方案最合理。我们进一步分析扣库存的细节，这里还有很大的优化空间，库存存在哪里？怎样保证高并发下，正确的扣库存，还能快速的响应用户的请求?</p>
+
+<p>在单机低并发的情况下，我们实现扣库存通常是这样的:</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggdvu33ar4j30od07nq85.jpg" alt="" /></p>
+
+<p>为了保证扣库存和生成订单的原子性，需要采用事务处理，然后取库存判断、减库存，最后提交事务，整个流程有很多IO，对数据库的操作又是阻塞的。这种方式根本不适合高并发的秒杀系统。</p>
+
+<p>接下来我们对单机扣库存的方案做了优化: 本地扣库存。我们把一定的库存量分配到本地机器，直接在内存中减去库存，然后按照之前的逻辑异步创建订单。改进之后的单机系统是这样的。</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggdw4ejx1oj30u90bv11e.jpg" alt="" /></p>
+
+<p>这样的话 就避免了对数据库频繁的IO操作，只在内存中做运算，极大的提高了单机抗并发的能力。但是百万的用户请求量单机是无论如何也扛不住的，虽然nginx处理网络请求使用<code class="language-plaintext highlighter-rouge">epoll模型</code>, c10k的问题在业界早已得到了解决。但是linux系统下，<code class="language-plaintext highlighter-rouge">一切资源皆文件</code>,网络请求也是这样，大量的文件描述符会使操作系统瞬间失去了响应。上面我们提到了nginx的加权均衡策略，我们不妨假设将100w的用户请求量平均均衡到100台服务器上，这样单机所承受的并发量就小了很多。然后我们每台机器本地库存100张火车票，100台服务器上的总库存还是1万，这样保证了库存订单不超卖，下面是我们描述的集群架构:</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ggdxioepnrj316h0iqtl6.jpg" alt="" /></p>
+:ET

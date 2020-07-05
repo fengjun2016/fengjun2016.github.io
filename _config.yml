@@ -1,7 +1,7 @@
 # Site settings
 title: GO Blog
 SEOTitle: fengjun的博客 | GO Blog
-header-img: img/post-bg-desk.jpg
+header-img: img/post-bg-business-pc.jpg
 email: jornfeng@gmail.com
 description: "Every failure is leading towards success."
 keyword: "GO, GO Blog, fengjun的博客, fengnun, Go, Web"
@@ -40,7 +40,6 @@ anchorjs: true                          # if you want to customize anchor. check
 # Gems
 # from PR#40, to support local preview for Jekyll 3.0
 gems: [jekyll-paginate]
-
 
 
 
