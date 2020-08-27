@@ -1,0 +1,39 @@
+I"�<h2 id="前言">前言</h2>
+
+<p>之前提到过, <code class="language-plaintext highlighter-rouge">Docker Hub</code>上有大量的高质量的镜像可以使用，这里我们就说一下怎么获取这些镜像。
+从Docker镜像仓库获取镜像的命令是 <code class="language-plaintext highlighter-rouge">docker pull</code>。 其命令格式为如下:
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gi4bhv2e37j310e0bcq4q.jpg" alt="" /></p>
+
+<p>具体的选项可以通过<code class="language-plaintext highlighter-rouge">docker pull --help</code>命令看到，这里我们说一下镜像名称的格式。</p>
+<ul>
+  <li>Docker镜像仓库地址: 地址的格式一般是<code class="language-plaintext highlighter-rouge">&lt;域名/IP&gt;[:端口号]</code>。默认地址是<code class="language-plaintext highlighter-rouge">Docker Hub</code>。</li>
+  <li>仓库名: 如之前所说, 这里的仓库名是两段式名称，即<code class="language-plaintext highlighter-rouge">&lt;用户名&gt;/&lt;软件名&gt;</code>。对于<code class="language-plaintext highlighter-rouge">Docker Hub</code>,如果不给出用户名，则默认是<code class="language-plaintext highlighter-rouge">library</code>, 也即是官方提供的镜像。</li>
+</ul>
+
+<p>比如:
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gi4glpjvcmj315m0kcq7s.jpg" alt="" /></p>
+
+<p>上面的命令中没有给出Docker镜像的仓库地址，因此将会从<code class="language-plaintext highlighter-rouge">Docker Hub</code>获取镜像。而镜像名称是ubuntu:18.04,因此将会获取官方镜像library/ubunutu仓库中标签为18.04的镜像。</p>
+
+<p>从下载过程中我们可以看到我们之前提及的分层存储的概念，镜像是由多层存储所构成。下载也是一层一层的去下载, 并非单一文件。下载过程中给出了每一层的ID的前12位。并且下载结束后，给出该镜像完整的sha256的摘要，以确保下载一致性。</p>
+
+<p>在使用上面命令的时候，你可能会发现，你所看到的层ID以及sha256的摘要和这里的不一样。这是因为官方镜像是一直在维护的，有任何新的bug, 或者版本更新，都会进行修复再以原来的标签发布，这样可以确保任何使用这个标签的用户可以获得更安全，更稳定的镜像。</p>
+
+<h2 id="运行">运行</h2>
+
+<p>有了镜像后，我们就能够以这个镜像为基础启动并运行一个容器。以上面的ubuntu:18.04为例,如果我们打算启动里面的bash并且进行交互式操作的话，可以执行下面的命令。
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gi5izbf5plj31b80rcdmf.jpg" alt="" /></p>
+
+<p><code class="language-plaintext highlighter-rouge">docker run</code>就是运行容器的命令</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">-it</code>: 这是两个参数，一个是<code class="language-plaintext highlighter-rouge">-i</code>: 交互式操作，一个是<code class="language-plaintext highlighter-rouge">-t</code>终端。我们这里打算进入<code class="language-plaintext highlighter-rouge">bash</code>执行一些命令并查询返回结果，因此我们需要交互式终端。</li>
+  <li><code class="language-plaintext highlighter-rouge">--rm</code>: 这个参数就是说容器退出后随之将其删除。默认情况下，为了排障需求，退出的容器并不会立即删除，除非手动<code class="language-plaintext highlighter-rouge">docker rm</code>。我们这里只是随便执行了命令，看看结果，不需要排障和保留结果，因此使用<code class="language-plaintext highlighter-rouge">--rm</code>可以避免浪费空间。</li>
+  <li><code class="language-plaintext highlighter-rouge">ubuntu:18.04</code>: 这里指用<code class="language-plaintext highlighter-rouge">ubuntu:18.04</code>镜像为基础来启动容器。</li>
+  <li>·<code class="language-plaintext highlighter-rouge">bash</code>: 放在镜像名后的是 <code class="language-plaintext highlighter-rouge">命令</code>, 这里我们希望有个交互式<code class="language-plaintext highlighter-rouge">shell</code>，因此用的是<code class="language-plaintext highlighter-rouge">bash</code>。</li>
+</ul>
+
+<p>进入容器后，我们可以在 <code class="language-plaintext highlighter-rouge">Shell</code> 下操作，执行任何所需的命令。这里，我们执行了 <code class="language-plaintext highlighter-rouge">cat /etc/os-release</code>，这是 <code class="language-plaintext highlighter-rouge">Linux</code> 常用的查看当前系统版本的命令，从返回的结果可以看到容器内是 Ubuntu 18.04.1 LTS 系统。
+最后我们通过<code class="language-plaintext highlighter-rouge">exit</code> 退出了这个容器。</p>
+
+<h2 id="列出镜像">列出镜像</h2>
+:ET
