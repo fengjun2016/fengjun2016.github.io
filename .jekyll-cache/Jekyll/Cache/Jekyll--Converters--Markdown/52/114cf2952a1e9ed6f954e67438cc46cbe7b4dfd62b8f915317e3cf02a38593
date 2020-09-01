@@ -1,0 +1,37 @@
+I"8<h2 id="前言">前言</h2>
+
+<p>容器中可以运行一些网络应用，要让外部也可以访问到这些应用，可以通过-P或-p参数类指定端口映射。
+当时<code class="language-plaintext highlighter-rouge">-p</code>标记时,Docker会随机映射一个端口到内部容器开放的网络端口。</p>
+
+<p>使用<code class="language-plaintext highlighter-rouge">docker container ls</code>可以看到，本地主机的32768被映射到了容器的80端口。此时访问本机的32768端口即可访问容器内的<code class="language-plaintext highlighter-rouge">nginx</code>默认页面。
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5emrqd0j31z40icwiv.jpg" alt="" /></p>
+
+<p>同样的, 可以通过<code class="language-plaintext highlighter-rouge">docker logs</code> 命令来查看访问记录。
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5gbnhp3j31z40dc77m.jpg" alt="" /></p>
+
+<p><code class="language-plaintext highlighter-rouge">-p</code> 则可以指定要映射的端口, 并且，在一个指定端口只可以绑定一个容器。支持的格式有
+<code class="language-plaintext highlighter-rouge">ip:hostPort:containerPort | ip:containerPort | hostPort:containerPort</code>。</p>
+
+<h2 id="映射到所有接口地址">映射到所有接口地址</h2>
+<p>使用<code class="language-plaintext highlighter-rouge">hostPort:containerPort</code>格式本地的80端口映射到容器的80端口,可以执行:
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5m2nexaj31z40bcdhu.jpg" alt="" /></p>
+
+<p>此时默认会绑定本地所有接口上的所有地址。</p>
+
+<h2 id="映射到指定地址的指定端口">映射到指定地址的指定端口</h2>
+<p>可以使用ip:hostPort:containerPort 格式指定映射使用一个特定地址，比如localhost地址可以使用127.0.0.1
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5sjqy28j318s0bc40a.jpg" alt="" /></p>
+
+<h2 id="映射到指定地址的任意的任意端口">映射到指定地址的任意的任意端口</h2>
+<p>使用<code class="language-plaintext highlighter-rouge">ip::containerPort</code>绑定localhost的任意端口到容器的80端口, 本地主机会自动分配一个端口。
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5ufqegwj318s0bc0ui.jpg" alt="" /></p>
+
+<p>还可以使用 <code class="language-plaintext highlighter-rouge">udp</code> 标记来指定 <code class="language-plaintext highlighter-rouge">udp</code> 端口
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5x83vasj318s0bcdhn.jpg" alt="" /></p>
+
+<h2 id="查看映射端口配置">查看映射端口配置</h2>
+<p>使用 <code class="language-plaintext highlighter-rouge">docker port</code> 来查看当前映射的端口配置,也可以查看到绑定的地址
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5yshka7j318s0cc40f.jpg" alt="" />
+<code class="language-plaintext highlighter-rouge">注意</code>:
+    * 容器有自己的内部网络和ip地址(使用<code class="language-plaintext highlighter-rouge">docker inspect</code>查看, Docker 还可以有一个可变的网络配置)</p>
+:ET
