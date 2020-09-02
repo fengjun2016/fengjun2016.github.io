@@ -1,0 +1,6 @@
+I"<h2 id="前言">前言</h2>
+
+<p>在换了 <code class="language-plaintext highlighter-rouge">Mac Os</code> 的操作系统之后，刚开始是由于觉得<code class="language-plaintext highlighter-rouge">Mac Os</code>的手势非常便捷好用，所以后来慢慢就不适用鼠标了，在日常的开发过程中，都是键盘加上手势完成工作和学习任务了，但是后面在<code class="language-plaintext highlighter-rouge">Chrome</code>浏览器上移动光标的行为，还是会觉得没有鼠标有点麻烦，就试着搜了一下能否单纯只是是用键盘就能流畅快捷的操作了。</p>
+
+<p>然后就发现了 <code class="language-plaintext highlighter-rouge">Vimium</code> 这个谷歌插件了，接下来我就来学习和演示一下它的神功吧。</p>
+:ET

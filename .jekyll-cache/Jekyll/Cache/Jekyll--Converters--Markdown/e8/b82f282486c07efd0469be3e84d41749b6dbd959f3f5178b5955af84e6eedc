@@ -1,0 +1,37 @@
+I"�<h2 id="前言">前言</h2>
+
+<p>如何自定义配置容器的主机名和DNS呢?秘诀就是Docker利用虚拟文件来挂载容器的3个相关配置文件。</p>
+
+<p>在容器中使用 <code class="language-plaintext highlighter-rouge">mount</code> 命令可以看到挂载信息:
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gicdp4987gj31z40ecdj6.jpg" alt="" /></p>
+
+<p>这种机制可以让宿主主机DNS信息发生更新后, 所有<code class="language-plaintext highlighter-rouge">Docker</code>容器的<code class="language-plaintext highlighter-rouge">DNS</code>配置通过
+<code class="language-plaintext highlighter-rouge">/etc/resolv.conf</code>文件立刻得到更新。</p>
+
+<p>配置全部容器的DNS，也可以在 <code class="language-plaintext highlighter-rouge">/etc/docker/daemon.json</code>文件中增加以下内容来设置。
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gicdqe0bobj31z40gcmzv.jpg" alt="" /></p>
+
+<p>由于我的操作系统是 <code class="language-plaintext highlighter-rouge">Mac Os</code>，所以可以在客户端去进行配置，打开客户端 <code class="language-plaintext highlighter-rouge">prefrence</code> 设置，然后选择<code class="language-plaintext highlighter-rouge">Docker Engine</code>, 就会看到配置文件了.
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gicdv4xm20j30t10igwgw.jpg" alt="" /></p>
+
+<p>这样每次启动的容器DNS自动配置为<code class="language-plaintext highlighter-rouge">114.114.114.114</code> 和 <code class="language-plaintext highlighter-rouge">8.8.8.8</code>。 使用以下命令证明其已经生效。
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gicdz8ywc6j31z40dc41b.jpg" alt="" /></p>
+
+<p>如果用户想要手动指定容器的配置，可以在使用<code class="language-plaintext highlighter-rouge">docker run</code> 命令启动容器时加入如下参数:</p>
+
+<ul>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">-h HOSTNAME</code> 或者 <code class="language-plaintext highlighter-rouge">--hostname=HOSTNAME</code> 设定容器的主机名, 它会被写到容器内的<code class="language-plaintext highlighter-rouge">/etc/hostname</code> 和 <code class="language-plaintext highlighter-rouge">/etc/hosts</code>。但是它在容器外部看不到，既不会在 <code class="language-plaintext highlighter-rouge">docker container ls</code>中显示, 也不会在其他容器的<code class="language-plaintext highlighter-rouge">/etc/hosts</code> 看到。</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">--dns=IP_ADDRESS</code> 添加DNS服务器大盘容器的<code class="language-plaintext highlighter-rouge">/etc/resolve.conf</code>中，让容器用这个服务器来解析所有不在<code class="language-plaintext highlighter-rouge">/etc/hosts</code>中的主机名。</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">--dns-search=DOMAIN</code> 设定容器的搜索域，当设定搜索域为 <code class="language-plaintext highlighter-rouge">.example.com</code>时，在搜索一个名为host的主机时, DNS不仅搜索host, 还会搜索<code class="language-plaintext highlighter-rouge">host.example.com</code>。</p>
+  </li>
+</ul>
+
+<blockquote>
+  <p>注意: 如果在容器启动时没有指定最后两个参数, <code class="language-plaintext highlighter-rouge">Docker</code> 会默认用主机上的 <code class="language-plaintext highlighter-rouge">/etc/resolv.conf</code>来配置容器。</p>
+</blockquote>
+:ET
