@@ -36,35 +36,50 @@ tags:
 * 需要在科学上网的前提下,r进入Chrome网上应用店下载,搜索[Vimium](https://chrome.google.com/webstore/detail/vimium/dbepggeogbaibhgnhhndojpepiihcmeb)
 * 或者直接去[Github代码仓库](https://github.com/philc/vimium)下载
 
-## 快捷键使用介绍
+## 快捷键使用介绍 `注意区分大小写`
 
 > 快捷键及其描述比较简单,不做过多的翻译，有些并不是日常会常用的，所以这里只对常用的和有歧义的地方进行描述.
-
-### 当前页面导航
-
-```Vim
-?       show the help dialog for a list of all available keys
-h       scroll left
-j       scroll down
-k       scroll up
-l       scroll right
-gg      scroll to top of the page
-G       scroll to bottom of the page
-d       scroll down half a page
-u       scroll up half a page
-f       open a link in the current tab
-F       open a link in a new tab
-r       reload
-gs      view source - 展示的 vimium 的源码，而不是当前页面的源码
-i       enter insert mode -- all commands will be ignored until you hit Esc to exit
-yy      copy the current url to the clipboard
-yf      copy a link url to the clipboard
-gf      cycle forward to the next frame
-gF      focus the main/top frame
-```
-
 
 ### `?`使用
 安装完成后，点击 `?`，就会弹出一个快捷键列表的help页面。
 ![](https://tva1.sinaimg.cn/large/007S8ZIlgy1gicoqlqmjaj30zf0u0ti7.jpg)
 
+#### 页面滚动
+* `j` 按住向下滚，直到松开
+* `k` 按住向上滚，直到松开
+* `gg` 滚到顶部
+* `G` 滚到底部
+* `d` 向下滚半页
+* `u` 向上滚半页
+* `h` 按住向左滚，直到松开
+* `l` 按住向右滚，直到松开
+
+#### 页面导航
+* `yy` 复制当前标签页的 url
+* `p` 在当前标签页粘贴并打开 url
+* `P` 在新标签页粘贴并打开 url
+* `f` 在当前页打开链接
+* `F` 在新标签页中打开链接
+* `H` 后退
+* `L` 前进
+
+#### 快速启动框
+* `o` 检索书签或历史记录，找到网址后打开
+* `O` 检索书签或历史记录，找到网址后在新标签页中打开
+* `b` 检索书签，找到网址后打开
+* `B` 检索书签，找到网址后在新标签页中打开
+* `T` 检索打开的标签页，选择后切换到此标签页
+
+### 页面标签
+* `t` 打开一个新标签页
+* `J` 切换到左边的标签页
+* `K` 切换到右边的标签页
+* `^` 切换到刚刚访问的标签页
+* `g0` 切换到第一个标签页
+* `g$` 切换到最后一个标签页
+* `yt` 复制当前的标签页
+* `x` 关闭当前标签页
+* `X` 恢复刚刚关闭的标签页
+
+###  使用演示
+![](https://tva1.sinaimg.cn/large/007S8ZIlgy1gimsutzxepg31660mgx6q.gif)
