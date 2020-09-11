@@ -1,0 +1,14 @@
+I"�<h2 id="前言">前言</h2>
+
+<ul>
+  <li>Go程序的初始化和执行总是从<code class="language-plaintext highlighter-rouge">main.main()</code>函数开始的。</li>
+  <li>但是如果<code class="language-plaintext highlighter-rouge">main包</code>里面导入了其他的包，则会按照顺序将它们包含到<code class="language-plaintext highlighter-rouge">main包</code>(这里的导入顺序依赖具体实现,一般可能会以文件名或包路径名的字符串顺序导入)。</li>
+  <li>如果某个包被<code class="language-plaintext highlighter-rouge">多次导入</code>，那么<code class="language-plaintext highlighter-rouge">在执行的时候</code>只会<code class="language-plaintext highlighter-rouge">导入一次</code>。当一个包被导入时，如果它还导入了其他的包，则先将其他的包包含进来，然后创建和初始化这个包的常量和变量。</li>
+  <li>再调用包里面的<code class="language-plaintext highlighter-rouge">init</code>函数，如果<code class="language-plaintext highlighter-rouge">一个包有多个init()函数</code>，实现可能的是以文件名的殊勋调用，那么同一个文件内的多个init()函数是以<code class="language-plaintext highlighter-rouge">出现的顺序</code>依次调用的(init()不是普通函数，<code class="language-plaintext highlighter-rouge">可以定义多个</code>，<code class="language-plaintext highlighter-rouge">但是不能够被其他函数调用</code>`)。</li>
+  <li>最终，在<code class="language-plaintext highlighter-rouge">main包</code>的所有包常量、包变量被创建和初始化，并且只有在<code class="language-plaintext highlighter-rouge">init()函数</code>被执行后，才会进入<code class="language-plaintext highlighter-rouge">main.main()</code>函数，程序才会开始正常执行。</li>
+</ul>
+
+<h3 id="如下示意图">如下示意图:</h3>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gimuhw7ymej31110e376b.jpg" alt="" /></p>
+:ET

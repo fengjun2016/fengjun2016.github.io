@@ -1,0 +1,144 @@
+I"
+<hr />
+<p>layout:     post
+title:      Web端即时通讯技术原理1
+subtitle:   原理和过程分析
+date:       2020-02-01
+author:     fengfeng
+header-img: img/post-bg-re-vs-ng2.jpg
+catalog: true
+tags:
+    - IM
+    - 即时通讯
+    - Web开发
+—</p>
+
+<h2 id="前言">前言</h2>
+
+<p>有关<code class="language-plaintext highlighter-rouge">IM(InstantMessage)</code>聊天应用(如: 微信, QQ),消息推送技术(如：现今移动端App标配的消息推送模块)等即时通讯应用场景下，大多数都是桌面应用程序或者native应用较为流行。</p>
+
+<p>而Web端的IM应用，由于浏览器的兼容性以及其固有的”客户端请求服务器处理并响应”的通信模型，造成了要在浏览器中实现一个兼容性较好的IM应用, 其通信过程必然是诸多技术的组合，本文的目的就是要详细探讨这些技术并分析其原理和过程。</p>
+
+<h2 id="一传统web的通信原理">一·传统Web的通信原理</h2>
+<p>浏览器本身作为一个瘦客户端，不具备直接通过系统调用来达到和处于异地的另外一个客户端浏览器通信的功能。这和我们桌面应用的工作方式是不同的，通常桌面应用通过socket可以和远程主机上另外一端的一个进程建立TCP连接，从而达到全双工的即时通信。</p>
+
+<p>浏览器从诞生开始一直走的是客户端请求服务器，服务器返回的模式，即使发展至今仍然没有任何改变。所以肯定的是，要想实现两个客户端的通信，必然要通过服务器进行信息的转发。例如A要和B通信，则应该是A先把信息发送给IM应用服务器，服务器根据A信息中携带的接收者将它再转发给B,同样B到A也是这种模式，如下是所示:</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1giex6zrgc6j30h90eijsv.jpg" alt="" /></p>
+
+<h2 id="二-传统通信方式实现im应用需要解决的问题">二. 传统通信方式实现IM应用需要解决的问题</h2>
+<p>我们认识到基于web实现IM软件依然要走浏览器请求服务器的模式，这种方式下，针对IM软件的开发需要解决如下三个问题：</p>
+<ul>
+  <li>1.全双工通信
+    <blockquote>
+      <p>即达到浏览器拉取(pull)服务器数据,服务器推送(push)数据到浏览器;</p>
+    </blockquote>
+  </li>
+  <li>2.低延迟
+    <blockquote>
+      <p>即浏览器A发送给B的信息经过服务器要快速转发给B, 同理B的信息也要快速交给A, 实际上就是要求任何浏览器能够请求服务器的数据，服务器能够快速推送数据到浏览器;</p>
+    </blockquote>
+  </li>
+  <li>3.支持跨域
+    <blockquote>
+      <p>通常客户端浏览器和服务器都是处于网络的不同位置，浏览器本身不允许通过脚本直接访问不同域名下的服务器，即使IP地址相同域名不同也不行，域名相同端口不同也不行，这方面主要是为了安全考虑。</p>
+    </blockquote>
+  </li>
+</ul>
+
+<p>注: 关于浏览器跨域访问的安全问题，有一个被称为CSRF网络攻击方式, 请看下面的摘录</p>
+<blockquote>
+  <p>CSRF（Cross-site request forgery），中文名称：跨站请求伪造，也被称为：one click attack/session riding，缩写为：CSRF/XSRF。</p>
+</blockquote>
+
+<blockquote>
+  <p>你这可以这么理解CSRF攻击：攻击者盗用了你的身份，以你的名义发送恶意请求。CSRF能够做的事情包括：以你名义发送邮件，发消息，盗取你的账号，甚至于购买商品，虚拟货币转账……造成的问题包括：个人隐私泄露以及财产安全。</p>
+</blockquote>
+
+<blockquote>
+  <p>CSRF这种攻击方式在2000年已经被国外的安全人员提出，但在国内，直到06年才开始被关注，08年，国内外的多个大型社区和交互网站分别爆出CSRF漏洞，如：NYTimes.com（纽约时报）、Metafilter（一个大型的BLOG网站），YouTube和百度HI……而现在，互联网上的许多站点仍对此毫无防备，以至于安全业界称CSRF为“沉睡的巨人”。</p>
+</blockquote>
+
+<p>打开Mac下自带的软件 <strong>Automator</strong></p>
+
+<p><img src="https://ww2.sinaimg.cn/large/006tKfTcgy1fckb184f74j319v0q01kx.jpg" alt="" /></p>
+
+<p>新建文稿</p>
+
+<p><img src="https://ww1.sinaimg.cn/large/006tKfTcgy1fckb6zzo28j30mo0fvgn7.jpg" alt="" /></p>
+
+<p>创建一个服务</p>
+
+<p><img src="https://ww1.sinaimg.cn/large/006tKfTcgy1fckb93qmy5j30g00fh0vq.jpg" alt="" /></p>
+
+<p><img src="https://ww2.sinaimg.cn/large/006tKfTcgy1fckbfe8o0zj30t10lb0wv.jpg" alt="" /></p>
+
+<p><img src="https://ww1.sinaimg.cn/large/006tKfTcgy1fckbff4e7pj30t10lbwis.jpg" alt="" /></p>
+
+<p>修改框内的脚本</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>on run {input, parameters}
+    tell application "Terminal"
+        reopen
+        activate
+    end tell
+end run
+
+</code></pre></div></div>
+
+<p>运行：<code class="language-plaintext highlighter-rouge">command + R</code>，如果没有问题，则会打开终端</p>
+
+<p><img src="https://ww2.sinaimg.cn/large/006tKfTcgy1fckaqdd2m1j30t10lb42a.jpg" alt="" /></p>
+
+<p><img src="https://ww3.sinaimg.cn/large/006tKfTcgy1fckaq4nn9hj30iy0daaan.jpg" alt="" /></p>
+
+<p>保存：<code class="language-plaintext highlighter-rouge">Command + S</code>，将其命名为<code class="language-plaintext highlighter-rouge">打开终端</code>或你想要的名字</p>
+
+<p>设置快捷键</p>
+
+<p>在 <strong>系统偏好设置</strong> -&gt; <strong>键盘设置</strong> -&gt; <strong>快捷键</strong> -&gt; <strong>服务</strong></p>
+
+<p>选择我们创建好的 ‘<strong>打开终端</strong>‘，设置你想要的快捷键，比我我设置了<code class="language-plaintext highlighter-rouge">⌘+空格</code></p>
+
+<p><img src="https://ww4.sinaimg.cn/large/006tKfTcgy1fckbvaixhnj30kw0ihq67.jpg" alt="" /></p>
+
+<p>到此，设置完成。</p>
+
+<p>聪明的你也许会发现，这个技巧能为所有的程序设置快捷启动。</p>
+
+<p>将脚本中的 <code class="language-plaintext highlighter-rouge">Terminal</code> 替换成 其他程序就可以</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>on run {input, parameters}
+    tell application "Terminal"
+        reopen
+        activate
+    end tell
+end run
+
+</code></pre></div></div>
+
+<h2 id="黑技能">黑技能</h2>
+
+<p>既然学了 <code class="language-plaintext highlighter-rouge">Automator</code> ，那就在附上一个黑技能吧。为你的代码排序。在 <strong>Xcode8</strong>以前，有个插件能为代码快速排序，不过时过境迁~ 对于没用的插件而且又有患有强迫症的的小伙伴，只能手动排序了（😂）.</p>
+
+<p>首先还是创建一个服务</p>
+
+<p>创建一个<code class="language-plaintext highlighter-rouge">Shell</code>脚本，</p>
+
+<p>勾选:<code class="language-plaintext highlighter-rouge">用输出内容替换所选文本</code></p>
+
+<p>输入：<code class="language-plaintext highlighter-rouge">sort|uniq</code></p>
+
+<p>保存： 存为<code class="language-plaintext highlighter-rouge">Sort &amp; Uniq</code></p>
+
+<p><img src="https://ww4.sinaimg.cn/large/006tKfTcgy1fckd40rgwmj30rt0ildiy.jpg" alt="" /></p>
+
+<p><strong>选中你的代代码</strong> -&gt; <strong>鼠标右键</strong> -&gt; <strong>Servies</strong> -&gt; <strong>Sort&amp;Uniq</strong></p>
+
+<p><img src="https://ww2.sinaimg.cn/large/006tKfTcgy1fckd6tx1dzj30h90b7mzm.jpg" alt="" /></p>
+
+<p>排序后的代码：</p>
+
+<p><img src="https://ww3.sinaimg.cn/large/006tKfTcgy1fckd6lak55j309j05y3yo.jpg" alt="" /></p>
+
+:ET
