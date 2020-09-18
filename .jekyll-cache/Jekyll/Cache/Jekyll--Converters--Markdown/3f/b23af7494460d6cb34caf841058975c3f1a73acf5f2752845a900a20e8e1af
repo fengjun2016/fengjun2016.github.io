@@ -1,0 +1,38 @@
+I"<h2 id="前言">前言</h2>
+<p>本文是学习MYSQL45讲 第一篇专栏学习笔记的总结.
+主要是从一个整体全貌的高度来理解的。下图为林晓斌老师给画出来的MYSQL的基本架构示意图.</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1giv18bbyz6j31400u0tpc.jpg" alt="" /></p>
+
+<h3 id="笔记知识点">笔记知识点:</h3>
+<ul>
+  <li>大体来说, <code class="language-plaintext highlighter-rouge">MYSQL可以分为SERVER层和存储引擎层两部分</code></li>
+  <li><code class="language-plaintext highlighter-rouge">Server层</code>处理逻辑，缓存，优化器，权限检验。包括连接器、查询缓存、分析器、优化器、执行器等，涵盖 MySQL 的大多数核心服务功能，以及所有的内置函数（如日期、时间、数学和加密函数等），所有跨存储引擎的功能都在这一层实现，比如存储过程、触发器、视图等。</li>
+</ul>
+
+<h2 id="映射到所有接口地址">映射到所有接口地址</h2>
+<p>使用<code class="language-plaintext highlighter-rouge">hostPort:containerPort</code>格式本地的80端口映射到容器的80端口,可以执行:
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5m2nexaj31z40bcdhu.jpg" alt="" /></p>
+
+<p>此时默认会绑定本地所有接口上的所有地址。</p>
+
+<h2 id="映射到指定地址的指定端口">映射到指定地址的指定端口</h2>
+<p>可以使用ip:hostPort:containerPort 格式指定映射使用一个特定地址，比如localhost地址可以使用127.0.0.1
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5sjqy28j318s0bc40a.jpg" alt="" /></p>
+
+<h2 id="映射到指定地址的任意的任意端口">映射到指定地址的任意的任意端口</h2>
+<p>使用<code class="language-plaintext highlighter-rouge">ip::containerPort</code>绑定localhost的任意端口到容器的80端口, 本地主机会自动分配一个端口。
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5ufqegwj318s0bc0ui.jpg" alt="" /></p>
+
+<p>还可以使用 <code class="language-plaintext highlighter-rouge">udp</code> 标记来指定 <code class="language-plaintext highlighter-rouge">udp</code> 端口
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5x83vasj318s0bcdhn.jpg" alt="" /></p>
+
+<h2 id="查看映射端口配置">查看映射端口配置</h2>
+<p>使用 <code class="language-plaintext highlighter-rouge">docker port</code> 来查看当前映射的端口配置,也可以查看到绑定的地址
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib5yshka7j318s0cc40f.jpg" alt="" />
+<code class="language-plaintext highlighter-rouge">注意</code>:
+    * 容器有自己的内部网络和ip地址(使用<code class="language-plaintext highlighter-rouge">docker inspect</code>查看, Docker 还可以有一个可变的网络配置)
+    * <code class="language-plaintext highlighter-rouge">-p</code> 标记可以多次使用来绑定多个端口
+<code class="language-plaintext highlighter-rouge">例如</code>:
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gib6ijry62j318s0ecacd.jpg" alt="" /></p>
+:ET
