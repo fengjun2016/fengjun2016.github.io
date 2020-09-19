@@ -1,0 +1,22 @@
+I"
+<h2 id="前言">前言</h2>
+
+<p><code class="language-plaintext highlighter-rouge">虚拟机</code>就是利用真实机的环境用软件的方式模拟成真实机系统的一个软件，而现在虚拟机软件都内置了几种虚拟系统的上网方式，一般有三种, 分别是<code class="language-plaintext highlighter-rouge">桥接(Bridge)</code>、<code class="language-plaintext highlighter-rouge">nat(地址转换)</code>、<code class="language-plaintext highlighter-rouge">Host-only(单独户网络)</code>， 那么这三种虚拟机的联网方式都分别是什么工作原理呢?</p>
+
+<h2 id="网络配置过程">网络配置过程</h2>
+
+<ul>
+  <li>
+    <p>当Docker启动时，会自动在主机上创建一个<code class="language-plaintext highlighter-rouge">docker0</code>虚拟网桥，实际上是<code class="language-plaintext highlighter-rouge">linux</code>的一个桥接<code class="language-plaintext highlighter-rouge">bridge</code>,可以理解为一个软件交换机。它会挂载到它的网口之间进行转发。</p>
+  </li>
+  <li>
+    <p>同时, Docker随机分配一个本地未占用的私有网段(<code class="language-plaintext highlighter-rouge">在RFC1918</code>中定义)中的的一个地址给<code class="language-plaintext highlighter-rouge">docker0</code>接口。比如典型的<code class="language-plaintext highlighter-rouge">172.17.42.1</code>, 掩码为<code class="language-plaintext highlighter-rouge">255.255.0.0</code>。此后启动的容器内的网口也会自动分配一个同一网段(<code class="language-plaintext highlighter-rouge">172.17.0.0/16</code>)的地址。</p>
+  </li>
+  <li>
+    <p>当创建一个<code class="language-plaintext highlighter-rouge">Docker</code>容器的时候，同时会创建一对<code class="language-plaintext highlighter-rouge">veth pair</code>接口(当数据包发送到一个接口时，另外一个接口也可以收到相同的数据包)。这对接口一端在容器内部,即<code class="language-plaintext highlighter-rouge">eth0</code>;另外一端在本地被挂载到<code class="language-plaintext highlighter-rouge">docker0</code>网桥上，名称以<code class="language-plaintext highlighter-rouge">veth</code>开头。通过这种方式，<code class="language-plaintext highlighter-rouge">主机可以和容器通信，容器之间也可以相互通信</code>.这样，Docker就创建了在主机和所有容器之间一个虚拟共享网络。</p>
+  </li>
+</ul>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1giv3nddlf1j31b20u0gmn.jpg" alt="" /></p>
+
+:ET
