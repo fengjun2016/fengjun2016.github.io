@@ -1,0 +1,256 @@
+I"YA<h1 id="linux进程间通信方式">Linux进程间通信方式</h1>
+<p>首先，进程之间为什么需要进行通信呢? 主要有以下应用场景:</p>
+<ul>
+  <li>数据传输: 一个进程需要将它的数据发送给另一个进程，发送的数据量在一个字节到几兆字节之间。</li>
+  <li>共享数据: 多个进程想要操作共享数据，一个进程对共享数据的修改，别的进程应该立刻看到。</li>
+  <li>通知数据: 一个进程需要向另一个或者一组进程发送消息，通知它(它们)发生了某种事件(如进程终止时要通知父进程)。</li>
+  <li>资源共享: 多个进程之间共享同样的资源。为了操作到这一点，需要内核提供锁和同步机制。</li>
+  <li>进程控制: 有些进程希望完全控制另一个进程的执行(如 Debug进程), 此时控制进程希望能够拦截另一个进程的所有陷入和异常，并能够及时知道它的状态改变。</li>
+</ul>
+
+<p>其次，进程之间通信有哪些手段呢?</p>
+<ul>
+  <li>管道(pipe)
+    <blockquote>
+      <p>管道包括三种方式:</p>
+    </blockquote>
+    <ul>
+      <li>普通管道pipe: 通常有两种限制，一种是单工，只能单向传输; 二是只能在父子进程或者兄弟进程间使用。</li>
+      <li>流管道s_pipe:去除了第一种限制, 为半双工, 只能在父子或兄弟进程之间使用，可以进行双向传输。</li>
+      <li>命名管道name_pipe: 去除了第二种限制，可以在许多并不相关的进程之间进行通讯。</li>
+    </ul>
+  </li>
+  <li>信号量(semophore)
+    <blockquote>
+      <p>信号量是一个计数器，可以控制多个进程对共享资源的访问。它常常作为一种锁机制，防止某进程正在访问共享资源时，其他进程也访问该资源。因此，主要作为<code class="language-plaintext highlighter-rouge">进程间</code>以及<code class="language-plaintext highlighter-rouge">同一进程</code>内<code class="language-plaintext highlighter-rouge">不同线程</code>之间的<code class="language-plaintext highlighter-rouge">同步</code>手段。</p>
+    </blockquote>
+  </li>
+  <li>消息队列(message queue)
+    <blockquote>
+      <p>消息队列是由消息的链表，存放在内核中并由消息队列标识符标识。消息队列克服了信号传递信息少、管道只能承载无格式字节流以及缓冲区大小受限等缺点。</p>
+    </blockquote>
+  </li>
+  <li>信号(signal)
+    <blockquote>
+      <p>信号是一种比较复杂的通信方式，用于通知接收进程某个时间已经发生。<code class="language-plaintext highlighter-rouge">这个也是golang采用的一种通信的方式</code></p>
+    </blockquote>
+  </li>
+  <li>共享内存(shared memory)
+    <blockquote>
+      <p>共享内存就是映射一段能被其他进程所访问的内存，这段共享内存由一个进程创建，但是多个进程都可以访问。共享内存是最快的IPC方式，它是针对其他进程间通信方式运行效率低而专门设计的。它往往与其他通信机制，如信号量来配合使用，来实现进程间的同步和通信。</p>
+    </blockquote>
+  </li>
+  <li>套接字
+    <blockquote>
+      <p>套接口也是一种进程间通信机制，与其他通信机制不同的是，它可用于<code class="language-plaintext highlighter-rouge">不同机器</code>之间的<code class="language-plaintext highlighter-rouge">进程通信</code>。</p>
+    </blockquote>
+  </li>
+</ul>
+
+<h1 id="linux常用信号">Linux常用信号</h1>
+<p>下面重点聊一聊, 进程间通信比较重要的一种方式: 信号。
+Linix 支持的信号列表如下(请使用kill -l 命令自行查看)
+我这边展示一下 mac Os上支持的信号列表, 并解释一下相应常用信号的含义:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">信号名称</th>
+      <th style="text-align: center">编号</th>
+      <th style="text-align: center">说明</th>
+      <th style="text-align: left">行为</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">HUP</td>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">挂起信号</td>
+      <td style="text-align: left">没有捕捉该信号，当收到该信号时，进程就会推出</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">INT</td>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">中断信号(Ctrl+C)</td>
+      <td style="text-align: left">进程结束和<code class="language-plaintext highlighter-rouge">core dump</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: center">QUIT</td>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">退出信号(Ctrl+)</td>
+      <td style="text-align: left">退出时会产生core文件</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">KILL</td>
+      <td style="text-align: center">9</td>
+      <td style="text-align: center">强制终止信号</td>
+      <td style="text-align: left">迅速完全终止进程 不能被捕获</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">USER1</td>
+      <td style="text-align: center">10</td>
+      <td style="text-align: center">自定义信号1</td>
+      <td style="text-align: left"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">USER2</td>
+      <td style="text-align: center">12</td>
+      <td style="text-align: center">自定义信号2</td>
+      <td style="text-align: left"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TERM</td>
+      <td style="text-align: center">15</td>
+      <td style="text-align: center">终止信号</td>
+      <td style="text-align: left">常规的终止进程，可以被阻塞和处理</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">CONT</td>
+      <td style="text-align: center">18</td>
+      <td style="text-align: center">继续信号</td>
+      <td style="text-align: left">和STOP信号刚好相反</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">STOP</td>
+      <td style="text-align: center">19</td>
+      <td style="text-align: center">停止信号(Ctrl+Z)</td>
+      <td style="text-align: left">该进程还未结束，只是暂停执行</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="什么是linux下的core-dump插个曲">什么是Linux下的core dump(<code class="language-plaintext highlighter-rouge">插个曲</code>)</h2>
+<blockquote>
+  <p>在linux开发下，如果程序突然崩溃了，也没有任何日志。这时查看core文件。从core文件中分析原因，通过gdb看出程序挂在哪里，分析前后的变量，找出问题的原因。</p>
+</blockquote>
+
+<ul>
+  <li>Core Dump
+    <blockquote>
+      <p>当程序运行的过程中异常终止或崩溃，操作系统会将程序当时的内存状态记录下来，保存在一个文件中，这种行为就叫做Core Dump（中文有的翻译成“核心转储”)。我们可以认为 core dump 是“<code class="language-plaintext highlighter-rouge">内存快照</code>”，但实际上，除了内存信息之外，还有些关键的程序运行状态也会同时 dump 下来，例如寄存器信息（包括程序指针、栈指针等）、内存管理信息、其他处理器和操作系统状态和信息。core dump 对于编程人员诊断和调试程序是非常有帮助的，因为对于有些程序错误是很难重现的，例如指针异常，而 core dump 文件可以再现程序出错时的情景。</p>
+    </blockquote>
+  </li>
+  <li>相关设置
+    <blockquote>
+      <p>如果没有进行core dump的相关设置,默认是不开启的。可以通过<code class="language-plaintext highlighter-rouge">ulimit -c</code>查看是否开启。如果输出为<code class="language-plaintext highlighter-rouge">0</code>, 则没有开启，需要执行<code class="language-plaintext highlighter-rouge">ulimit -c unlimited</code> 开启 <code class="language-plaintext highlighter-rouge">core dump</code>的功能。</p>
+    </blockquote>
+  </li>
+  <li>ulimit
+    <blockquote>
+      <p><code class="language-plaintext highlighter-rouge">ulimit</code>命令用来限制系统用户对shell资源的访问。限制shell启动进程所占用的资源，支持以下各种类型的限制： 所创建的内核文件的大小、进程数据块的大小、Shell进程创建文件的大小、内存锁住的大小、常驻内存集的大小、打开文件描述符的数量、分配堆栈的最大大小、Cpu时间、单个用户的最大线程数、Shell进程所能使用的最大虚拟内存。同时，它支持硬资源和软资源的限制。</p>
+    </blockquote>
+
+    <p>ulimit的相关选项如下:</p>
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-a</span>：显示目前资源限制的设定；
+<span class="nt">-c</span> &lt;core文件上限&gt;：设定core文件的最大值，单位为区块；
+<span class="nt">-d</span> &lt;数据节区大小&gt;：程序数据节区的最大值，单位为KB；
+<span class="nt">-f</span> &lt;文件大小&gt;：shell所能建立的最大文件，单位为区块；
+<span class="nt">-H</span>：设定资源的硬性限制，也就是管理员所设下的限制；
+<span class="nt">-m</span> &lt;内存大小&gt;：指定可使用内存的上限，单位为KB； 
+<span class="nt">-n</span> &lt;文件数目&gt;：指定同一时间最多可开启的文件数；
+<span class="nt">-p</span> &lt;缓冲区大小&gt;：指定管道缓冲区的大小，单位512字节；
+<span class="nt">-s</span> &lt;堆叠大小&gt;：指定堆叠的上限，单位为KB；
+<span class="nt">-S</span>：设定资源的弹性限制；
+<span class="nt">-t</span> &lt;CPU时间&gt;：指定CPU使用时间的上限，单位为秒；
+<span class="nt">-u</span> &lt;程序数目&gt;：用户最多可开启的程序数目；
+<span class="nt">-v</span> &lt;虚拟内存大小&gt;：指定可使用的虚拟内存上限，单位为KB。
+</code></pre></div>    </div>
+  </li>
+  <li>core文件的名称和生成路径
+没有进行设置的话，默认生成的core文件不带其他任何扩展名称，全部命名为core。新的core文件生成将覆盖原来的core文件。可对core文件的名称和生成路径进行相关配置，如下:
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">/proc/sys /kernel/core_uses_pid</code> 可以控制core文件的文件名中是否添加pid作为扩展。文件内容为1, 表示添加pid作为扩展名，生成的core文件格式为core.xxxx; 为0则表示生成的core文件同一命名为core。</li>
+      <li><code class="language-plaintext highlighter-rouge">/proc/sys/kernel/core_pattern</code> 可以控制core文件保存位置和文件名格式。</li>
+    </ul>
+
+    <p>以下是参数列表:</p>
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>%p - insert pid into filename 添加pid 
+%u - insert current uid into filename 添加当前uid 
+%g - insert current gid into filename 添加当前gid 
+%s - insert signal that caused the coredump into the filename 添加导致产生core的信号 
+%t - insert UNIX <span class="nb">time </span>that the coredump occurred into filename 添加core文件生成时的unix时间 
+%h - insert <span class="nb">hostname </span>where the coredump happened into filename 添加主机名 
+%e - insert coredumping executable name into filename 添加命令名 
+</code></pre></div>    </div>
+  </li>
+  <li>示例:
+    <blockquote>
+      <p>会产生错误的代码如下:</p>
+    </blockquote>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c">#include &lt;stdio.h&gt;</span>
+  <span class="c">#include &lt;unistd.h&gt;</span>
+  <span class="c">#include &lt;sys/time.h&gt;</span>
+  <span class="c">#include &lt;sys/resource.h&gt;</span>
+
+  <span class="c">#define CORE_SIZE 500 * 1024 * 1024</span>
+
+  int main<span class="o">(){</span>
+      struct rlimit rlmt<span class="p">;</span>
+      <span class="k">if</span> <span class="o">(</span>getrlimit<span class="o">(</span>RLIMIT_CORE, &amp;rlmt<span class="o">)</span> <span class="o">==</span> <span class="nt">-1</span><span class="o">)</span> <span class="o">{</span>
+          <span class="k">return</span> <span class="nt">-1</span><span class="p">;</span>
+      <span class="o">}</span>
+      <span class="nb">printf</span><span class="o">(</span><span class="s2">"Before set rlimit core dump current is:%d, max is:%d</span><span class="se">\n</span><span class="s2">"</span>, <span class="o">(</span>int<span class="o">)</span>rlmt.rlim_cur, <span class="o">(</span>int<span class="o">)</span>rlmt.rlim_max<span class="o">)</span><span class="p">;</span>
+
+      rlmt.rlim_cur <span class="o">=</span> <span class="o">(</span>rlim_t<span class="o">)</span>CORE_SIZE<span class="p">;</span>
+      rlmt.rlim_max <span class="o">=</span> <span class="o">(</span>rlim_t<span class="o">)</span>CORE_SIZE<span class="p">;</span>
+
+      <span class="k">if</span> <span class="o">(</span>setrlimit<span class="o">(</span>RLIMIT_CORE, &amp;rlmt<span class="o">)</span> <span class="o">==</span> <span class="nt">-1</span><span class="o">)</span> <span class="o">{</span>
+          <span class="k">return</span> <span class="nt">-1</span><span class="p">;</span>
+      <span class="o">}</span>
+
+      <span class="k">if</span> <span class="o">(</span>getrlimit<span class="o">(</span>RLIMIT_CORE, &amp;rlmt<span class="o">)</span> <span class="o">==</span> <span class="nt">-1</span><span class="o">)</span> <span class="o">{</span>
+          <span class="k">return</span> <span class="nt">-1</span><span class="p">;</span>
+      <span class="o">}</span>
+      <span class="nb">printf</span><span class="o">(</span><span class="s2">"After set rlimit core dump current is:%d, max is:%d</span><span class="se">\n</span><span class="s2">"</span>, <span class="o">(</span>int<span class="o">)</span>rlmt.rlim_cur, <span class="o">(</span>int<span class="o">)</span>rlmt.rlim_max<span class="o">)</span><span class="p">;</span>
+
+      // 对空指针指向的内存区域写，会发生段错误 <span class="nt">--</span><span class="o">&gt;</span>产生core文件
+      int <span class="k">*</span>null_ptr <span class="o">=</span> NULL<span class="p">;</span>
+      <span class="k">*</span>null_ptr <span class="o">=</span> 10<span class="p">;</span>
+
+      <span class="k">return </span>0<span class="p">;</span>
+  <span class="o">}</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h1 id="程序热更新">程序热更新</h1>
+<p>介绍完信号，我们下面聊聊程序的热更新(也叫热重启),那么什么是程序的热更新呢?</p>
+<blockquote>
+  <p>在服务器不停机状态下，对正常访问流程不造成干扰和影响的程序升级方式</p>
+</blockquote>
+
+<p>当然这里主要指的是服务程序的热更新，并不是APP和操作系统的HotFix技术。</p>
+
+<p>那我们的程序为什么需要热更新呢?</p>
+<ul>
+  <li>互联网服务都追求服务高可用，即能提供7乘24不间断服务，升级代码影响用户是不可以接受的。</li>
+  <li>对于后端服务而言，一般都追求SLA达标99.99%, 即一年故障时间不能超过1小时，而后端服务几乎每天都会进行代码升级，因此必须采用热更新。</li>
+  <li>后端服务往往都是用集群承担大规模流量，代码升级往往涉及很多台机器，人工升级肯定是不现实的，随意需要自动化的升级方式。</li>
+</ul>
+
+<p>那么热更新的目标是什么呢?</p>
+<ul>
+  <li>不关闭现有连接(正在运行中的程序)</li>
+  <li>新的进程启动并替代旧进程</li>
+  <li>新的进程接管新的连接</li>
+  <li>连接要随时响应用户的请求，当用户仍在请求旧进程时要保持连接，新用户应请求新进程，不可以出现拒绝请求的情况。</li>
+</ul>
+
+<h1 id="nginx热更新原理">Nginx热更新原理</h1>
+<ul>
+  <li>Nginx进程以及控制信号
+ <img src="https://tva1.sinaimg.cn/large/008i3skNgy1gr7g8pacesj30lf0a2jtw.jpg" alt="" /></li>
+  <li>Nginx热更新流程
+ <img src="https://tva1.sinaimg.cn/large/008i3skNgy1gr7g9b0ow9j30lu0mgjxn.jpg" alt="" /></li>
+</ul>
+
+<h1 id="golang如何做热更新">Golang如何做热更新</h1>
+<ul>
+  <li>主动流量调度
+    <blockquote>
+      <p>一般的做法是ApiGateway+CD, 发布的时候自动摘除机器，等待程序处理完现有请求再做发布处理，也可以借助SLB或者LVS手动切换流量。</p>
+    </blockquote>
+  </li>
+</ul>
+:ET
