@@ -1,0 +1,70 @@
+I""<h2 id="前言">前言</h2>
+
+<p><code class="language-plaintext highlighter-rouge">虚拟机</code>就是利用真实机的环境用软件的方式模拟成真实机系统的一个软件。</p>
+
+<p>而现在虚拟机软件都内置了几种虚拟系统的上网方式，一般有三种, 分别是<code class="language-plaintext highlighter-rouge">桥接(Bridge)</code>、<code class="language-plaintext highlighter-rouge">Nat(地址转换)</code>、<code class="language-plaintext highlighter-rouge">Host-only(单独户网络)</code>。</p>
+
+<p>那么这三种虚拟机的联网方式都分别是什么工作原理呢?</p>
+
+<blockquote>
+  <p>在各家各户家庭用的网络常见的就是从电信、联通、长城这些<code class="language-plaintext highlighter-rouge">ISP网络服务提供商</code>接入的光纤，也就是常见的<code class="language-plaintext highlighter-rouge">ADSL</code>拨号上网，那么这种方式最恼火的就是您的一条<code class="language-plaintext highlighter-rouge">ADSL</code>线路只能提供给<code class="language-plaintext highlighter-rouge">一台电脑</code>上网,如果您想要<code class="language-plaintext highlighter-rouge">多台电脑</code>上网的话，我们就需要购买一个<code class="language-plaintext highlighter-rouge">路由器</code>，搭建一个<code class="language-plaintext highlighter-rouge">局域网</code>，其结构图如下类似：</p>
+</blockquote>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1giwxlk2us1j30k30q9dip.jpg" alt="" /></p>
+
+<h3 id="nat地址转换">Nat(地址转换)</h3>
+
+<p><code class="language-plaintext highlighter-rouge">Nat</code>就是指<code class="language-plaintext highlighter-rouge">网络地址转换(NAT,NetworkAddress Translation)</code>, 其意思就是讲一个<code class="language-plaintext highlighter-rouge">Ip</code>地址分成几个<code class="language-plaintext highlighter-rouge">Ip</code>的方法，广泛用于<code class="language-plaintext highlighter-rouge">广域网</code>, 那我们的虚拟机使用<code class="language-plaintext highlighter-rouge">Nat</code>是什么意思呢? 是如何来实现的呢?下面来看一张结构图:</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gixgcsjoyij30t80iotaf.jpg" alt="" /></p>
+
+<p>上面就是我们生活中最常见的上网方式，以及<code class="language-plaintext highlighter-rouge">Nat</code>的图示。</p>
+
+<p>上图中<code class="language-plaintext highlighter-rouge">pc2</code>、<code class="language-plaintext highlighter-rouge">pc3</code>为我们的真机，<code class="language-plaintext highlighter-rouge">pc4</code>、<code class="language-plaintext highlighter-rouge">pc5</code>为分别是我们<code class="language-plaintext highlighter-rouge">pc2</code>、<code class="language-plaintext highlighter-rouge">pc3</code>上创建的虚拟机。</p>
+
+<p>如果给虚拟机使用了<code class="language-plaintext highlighter-rouge">Nat</code>的网络通信方式的话，那么虚拟机将使用真机上的<code class="language-plaintext highlighter-rouge">Ip</code>地址，但是却不跟真机的<code class="language-plaintext highlighter-rouge">Ip</code>地址一致，而是真机将他们的地址进行了<code class="language-plaintext highlighter-rouge">Nat</code>转换，比如说，<code class="language-plaintext highlighter-rouge">pc2</code> 上<code class="language-plaintext highlighter-rouge">Ip</code>地址为<code class="language-plaintext highlighter-rouge">192.168.1.88</code> 通过<code class="language-plaintext highlighter-rouge">Nat</code>以后假设地址为 <code class="language-plaintext highlighter-rouge">10.2.15.2~255</code>，那么建立在<code class="language-plaintext highlighter-rouge">pc2</code>上的虚拟机的<code class="language-plaintext highlighter-rouge">pc4</code>的<code class="language-plaintext highlighter-rouge">Ip</code>地址就会在<code class="language-plaintext highlighter-rouge">10.2.15.2---10.2.15.255</code> 选择一个作为自己的<code class="language-plaintext highlighter-rouge">Ip</code>地址。</p>
+
+<p><code class="language-plaintext highlighter-rouge">此时我们的真机和虚拟机是可以相互通信的。</code></p>
+
+<ul>
+  <li>
+    <p>当虚拟机要访问外网，比如www.hao123.com, 假设虚拟机的Ip是10.2.15.8,真实机的Ip地址是192.168.18.3,那么虚拟机要上网，比如要访问www.hao123.com,首先会用虚拟机自己的Ip去访问www.baidu.com,但是是要通过我们的真实主机去上网的，前面不是说了吗, 虚拟机的地址是真机转换而来的，如果要访问外网的话，就必须要先经过真机再次转换，也即是将10.2.15.8转成真实机的Ip地址(192.168.18.3)去访问www.hao123.com。</p>
+
+    <blockquote>
+      <p>虚拟机发布访问www.hao123.com的请求(10.2.15.8) —-&gt; 经过真实机把10.2.15.8.转换为192.168.18.3 —&gt; 路由器将192.168.18.3转换为外网ip 211.167.97.67提交访问www.hao123.com的请求数据包</p>
+    </blockquote>
+  </li>
+  <li>
+    <p>大家一定要注意, <code class="language-plaintext highlighter-rouge">NAT</code>网络方式不管真实机可不可以联网，虚拟机都可以和我们的主机真实机通讯， 而虚拟机要上网必须要满足真实机可以上网才行。</p>
+  </li>
+</ul>
+
+<h3 id="桥接bridge">桥接(Bridge)</h3>
+
+<p>当虚拟机使用桥接网络方式以后，实际上<code class="language-plaintext highlighter-rouge">这台虚拟机就是一台单独的机器</code>，什么意思呢？</p>
+
+<p>这样给大家说，如果您是通过路由器上网，真实机的<code class="language-plaintext highlighter-rouge">Ip</code>是通过路由器自动获得的<code class="language-plaintext highlighter-rouge">Ip</code>为<code class="language-plaintext highlighter-rouge">192.168.18.8</code>, 虚拟机一旦设置了桥接网络模式，那么他也会向我们的上级路由器获取<code class="language-plaintext highlighter-rouge">Ip</code>地址，这个时候虚拟机的<code class="language-plaintext highlighter-rouge">Ip</code>地址就应该和真实的<code class="language-plaintext highlighter-rouge">Ip</code>地址在一个网络范围内(同一子网)也会在<code class="language-plaintext highlighter-rouge">192.168.18.0/25</code>;</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gixgnpdjnzj30ru0n4wge.jpg" alt="" /></p>
+
+<p>如上图所示,<code class="language-plaintext highlighter-rouge">pc2</code>、<code class="language-plaintext highlighter-rouge">pc3</code>是我们的真实机，<code class="language-plaintext highlighter-rouge">pc4</code>、<code class="language-plaintext highlighter-rouge">pc5</code>分别是上面2个真实机上面的虚拟机上面的虚拟机。</p>
+
+<ul>
+  <li>
+    <p>那么如果使用桥接网络的话<code class="language-plaintext highlighter-rouge">pc4</code>、<code class="language-plaintext highlighter-rouge">pc5</code>虽然是运行在上面，但实际上他们是直接和<code class="language-plaintext highlighter-rouge">路由器</code>进行通讯的，不和主机打交道，<code class="language-plaintext highlighter-rouge">唯一有联系</code>的地方也就是真实机运行了这个虚拟机系统软件，<code class="language-plaintext highlighter-rouge">借用</code>了真实机的<code class="language-plaintext highlighter-rouge">网卡</code>罢了，虽然我们再说桥接模式和真实机没有关系，但是这个时候虚拟机连和外面通讯的网卡硬件设备都没了当然也不能上网。</p>
+  </li>
+  <li>
+    <p>由于真实机是无效网内<code class="language-plaintext highlighter-rouge">Ip</code>,所以真实机无法联网,但是虚拟机缺完全可以和外界互通。</p>
+  </li>
+  <li>
+    <p>也就是说当选择桥接模式后，真实机和虚拟机就是两台完全不相干的，真实机能否上网，和虚拟机没有任何关系，虚拟机这个时候在乎的是上级统一子网的设备有没有自动分配<code class="language-plaintext highlighter-rouge">Ip</code>的功能，至于真实机不能上网， 跟虚拟机能否上网也没有关系。</p>
+  </li>
+  <li>
+    <p>我们通过连线到路由器，会发现，我们的虚拟机的确是直接通过路由器在上网，<code class="language-plaintext highlighter-rouge">Ip是路由器分配给他的，和真实主机没有关系。</code></p>
+  </li>
+</ul>
+
+<h3 id="host-only">Host-only</h3>
+
+<p>这种模式就是<code class="language-plaintext highlighter-rouge">虚拟机自己完全不能和外界通信</code>，相当于您家里买了一台电脑没有联网是一样的，很简单!!!!</p>
+:ET
